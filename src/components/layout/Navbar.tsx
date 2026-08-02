@@ -25,8 +25,14 @@ export const Navbar: React.FC = () => {
     <header className="h-14 bg-[#fdfbf7] border-b border-stone-200 px-6 flex items-center justify-between sticky top-0 z-20">
       {/* Title / Breadcrumb */}
       <div>
-        <h2 className="text-base font-bold text-stone-900 font-outfit">{activeTitle}</h2>
-        <p className="text-[11px] text-stone-500">{profile.name} • {profile.targetTitle}</p>
+        <div className="flex items-center gap-2">
+          <h1 className="text-base font-extrabold text-stone-900 font-outfit">CareerPilot AI</h1>
+          <span className="text-[10px] text-stone-400 font-bold">•</span>
+          <h2 className="text-xs font-bold text-stone-600 font-outfit">{activeTitle}</h2>
+        </div>
+        <p className="text-[11px] text-stone-500">
+          {profile.name ? `${profile.name} • ${profile.targetTitle}` : 'Intelligent Job Application CRM & Gmail Assistant'}
+        </p>
       </div>
 
       {/* Universal Search & Actions */}
