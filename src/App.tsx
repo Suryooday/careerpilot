@@ -13,6 +13,7 @@ import { TasksModule } from './components/tasks/TasksModule';
 import { AnalyticsModule } from './components/analytics/AnalyticsModule';
 import { SettingsModule } from './components/settings/SettingsModule';
 import { AICopilotDrawer } from './components/copilot/AICopilotDrawer';
+import { OnboardingModal } from './components/onboarding/OnboardingModal';
 
 const MainContent: React.FC = () => {
   const { activeTab } = useCRM();
@@ -43,6 +44,7 @@ export function App() {
           <MainContent />
         </div>
         <AICopilotDrawer />
+        <OnboardingModal />
       </div>
     </CRMProvider>
   );

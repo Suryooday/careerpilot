@@ -169,4 +169,5 @@ export interface UserProfile {
   groqApiKey?: string;
   geminiApiKey?: string;
   emailSyncEnabled: boolean;
+  isOnboarded?: boolean;
 }
