@@ -1,11 +1,15 @@
 import React from 'react';
 import {
   LayoutDashboard, Briefcase, Building2, Mail, FileText,
-  PenTool, FolderArchive, CheckSquare, BarChart3, Bot, Settings, Plus
+  PenTool, FolderArchive, CheckSquare, BarChart3, Bot, Settings, Plus, Home
 } from 'lucide-react';
 import { useCRM, ActiveTab } from '../../context/CRMContext';
 
-export const Sidebar: React.FC = () => {
+interface Props {
+  onGoToHome?: () => void;
+}
+
+export const Sidebar: React.FC<Props> = ({ onGoToHome }) => {
   const { activeTab, setActiveTab, applications, setIsAddAppModalOpen, setIsCopilotDrawerOpen, tasks } = useCRM();
 
   const activeAppsCount = applications.filter(a => a.stage !== 'Closed Selection').length;
@@ -29,32 +33,44 @@ export const Sidebar: React.FC = () => {
     <aside className="w-60 bg-[#f7f4ee] border-r border-stone-200 flex flex-col h-screen sticky top-0 z-30 select-none">
       {/* Brand Header */}
       <div className="p-5 border-b border-stone-200/80 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 cursor-pointer" onClick={onGoToHome}>
           <div className="w-7 h-7 rounded-lg bg-red-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
             C
           </div>
           <div>
             <h1 className="font-extrabold text-base text-stone-900 tracking-tight font-outfit">
-              Career<span className="text-red-600">Pilot</span>
+              Career<span className="text-red-600">Pilot AI</span>
             </h1>
-            <p className="text-[10px] font-medium text-stone-500 uppercase tracking-wider">Job Application CRM</p>
+            <p className="text-[10px] font-medium text-stone-500 uppercase tracking-wider">Public Home Page</p>
           </div>
         </div>
       </div>
 
       {/* Quick Action */}
-      <div className="p-3">
+      <div className="p-3 border-b border-stone-200/80">
         <button
           onClick={() => setIsAddAppModalOpen(true)}
-          className="w-full py-2 px-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
+          className="w-full py-2 px-3 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 shadow-sm transition-all"
         >
           <Plus className="w-4 h-4" />
           <span>New Application</span>
         </button>
       </div>
 
-      {/* Navigation List */}
-      <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+        {onGoToHome && (
+          <button
+            onClick={onGoToHome}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 mb-2 border-b border-stone-200/60 pb-2"
+          >
+            <div className="flex items-center gap-2.5">
+              <Home className="w-4 h-4 text-stone-500" />
+              <span>Public Home Page</span>
+            </div>
+          </button>
+        )}
+
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -62,10 +78,9 @@ export const Sidebar: React.FC = () => {
             <button
               key={item.id}
               onClick={() => {
+                setActiveTab(item.id);
                 if (item.id === 'copilot') {
                   setIsCopilotDrawerOpen(true);
-                } else {
-                  setActiveTab(item.id);
                 }
               }}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
