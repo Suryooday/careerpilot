@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { Search, Bell, Sparkles, User, RefreshCw, X, Bot } from 'lucide-react';
+import { Search, Bell, Sparkles, User, RefreshCw, X, Bot, LogIn } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 
-export const Navbar: React.FC = () => {
+interface Props {
+  onOpenAuth?: () => void;
+}
+
+export const Navbar: React.FC<Props> = ({ onOpenAuth }) => {
   const {
     activeTab, profile, setIsAddAppModalOpen, setIsCopilotDrawerOpen,
     notifications, dismissNotification, resetToDefaultSeed, applications
@@ -70,31 +74,22 @@ export const Navbar: React.FC = () => {
           )}
         </div>
 
-        {/* AI Copilot Button */}
-        <button
-          onClick={() => setIsCopilotDrawerOpen(true)}
-          className="p-1.5 px-3 rounded-lg bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 transition-all flex items-center gap-1.5 text-xs font-bold"
-        >
-          <Bot className="w-3.5 h-3.5 text-red-600" />
-          <span>Copilot</span>
-        </button>
-
-        {/* Notifications Icon */}
+        {/* Notifications */}
         <div className="relative">
           <button
             onClick={() => setIsNotifOpen(!isNotifOpen)}
-            className="p-2 rounded-lg bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:border-stone-300 transition-all relative shadow-sm"
+            className="p-2 rounded-lg bg-white border border-stone-200 text-stone-600 hover:text-stone-900 transition-all relative shadow-sm"
           >
             <Bell className="w-3.5 h-3.5" />
             {notifications.length > 0 && (
-              <span className="w-2 h-2 rounded-full bg-red-600 absolute top-1.5 right-1.5" />
+              <span className="w-2 h-2 rounded-full bg-red-600 absolute top-1 right-1" />
             )}
           </button>
 
           {isNotifOpen && (
-            <div className="absolute right-0 top-10 w-72 bg-white border border-stone-200 rounded-xl shadow-xl p-3 z-50">
-              <div className="flex items-center justify-between pb-2 border-b border-stone-200 mb-2">
-                <h4 className="text-[11px] font-bold text-stone-900 uppercase">Notifications ({notifications.length})</h4>
+            <div className="absolute right-0 top-9 w-72 bg-white border border-stone-200 rounded-xl shadow-xl p-3 z-50 space-y-2">
+              <div className="flex items-center justify-between pb-1 border-b border-stone-200">
+                <span className="text-xs font-bold text-stone-900 uppercase">Notifications</span>
                 <button onClick={() => setIsNotifOpen(false)} className="text-stone-400 hover:text-stone-700">
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -121,21 +116,19 @@ export const Navbar: React.FC = () => {
           )}
         </div>
 
-        {/* Reset Data Button */}
+        {/* Supabase Auth Trigger Button */}
         <button
-          onClick={() => {
-            if (confirm('Reset CRM data back to initial seed dataset?')) resetToDefaultSeed();
-          }}
-          title="Reset Seed Data"
-          className="p-2 rounded-lg bg-white border border-stone-200 text-stone-500 hover:text-red-600 transition-all shadow-sm"
+          onClick={onOpenAuth}
+          className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 font-bold text-xs rounded-lg flex items-center gap-1.5 transition-all shadow-xs"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <LogIn className="w-3.5 h-3.5 text-red-600" />
+          <span>{profile.name ? profile.name.split(' ')[0] : 'Sign In'}</span>
         </button>
 
         {/* User Profile Avatar */}
-        <div className="flex items-center gap-2 pl-2 border-l border-stone-200">
+        <div className="flex items-center gap-2 pl-1">
           <div className="w-7 h-7 rounded-lg bg-red-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-            {profile.name.charAt(0)}
+            {profile.name ? profile.name.charAt(0).toUpperCase() : 'U'}
           </div>
         </div>
       </div>

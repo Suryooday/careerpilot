@@ -16,6 +16,7 @@ import { AICopilotDrawer } from './components/copilot/AICopilotDrawer';
 import { OnboardingModal } from './components/onboarding/OnboardingModal';
 import { LegalModals } from './components/privacy/LegalModals';
 import { LandingPage } from './components/landing/LandingPage';
+import { AuthModal } from './components/auth/AuthModal';
 
 const MainContent: React.FC = () => {
   const { activeTab } = useCRM();
@@ -39,18 +40,24 @@ const MainContent: React.FC = () => {
 export function AppContainer() {
   const [viewMode, setViewMode] = useState<'landing' | 'app'>('landing');
   const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   if (viewMode === 'landing') {
-    return <LandingPage onLaunchDashboard={() => setViewMode('app')} />;
+    return (
+      <>
+        <LandingPage onLaunchDashboard={() => setViewMode('app')} />
+        <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      </>
+    );
   }
 
   return (
     <div className="flex h-screen bg-[#fdfbf7] text-stone-900 font-sans antialiased overflow-hidden">
       <Sidebar onGoToHome={() => setViewMode('landing')} />
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Navbar />
+        <Navbar onOpenAuth={() => setIsAuthOpen(true)} />
         <MainContent />
-        <footer className="py-2 px-6 bg-white border-t border-stone-200 text-[10px] text-stone-400 flex items-center justify-between">
+        <footer className="py-2 px-6 bg-[#fdfbf7] border-t border-stone-200 text-[10px] text-stone-400 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button onClick={() => setViewMode('landing')} className="font-bold hover:text-red-600 transition-colors">
               ← Return to Landing Page
@@ -72,6 +79,7 @@ export function AppContainer() {
       <AICopilotDrawer />
       <OnboardingModal />
       <LegalModals type={legalModal} onClose={() => setLegalModal(null)} />
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     </div>
   );
 }

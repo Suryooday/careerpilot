@@ -7,6 +7,41 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIU
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
+ * Supabase Auth: Sign Up with Email and Password
+ */
+export async function signUpWithEmail(email: string, password: string, name: string) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name }
+    }
+  });
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Supabase Auth: Sign In with Email and Password
+ */
+export async function signInWithEmail(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Supabase Auth: Sign Out
+ */
+export async function signOutUser() {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
+
+/**
  * Syncs user CRM application data to Supabase Database
  */
 export async function syncApplicationsToSupabase(applications: any[]) {
