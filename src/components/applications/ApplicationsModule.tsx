@@ -6,6 +6,7 @@ import { useCRM } from '../../context/CRMContext';
 import { PipelineStage } from '../../types/crm';
 import { ApplicationDetailModal } from './ApplicationDetailModal';
 import { AddApplicationModal } from './AddApplicationModal';
+import { normalizePipelineStage } from '../../utils/stageNormalizer';
 
 const STREAMLINED_STAGES: PipelineStage[] = [
   'Companies',
@@ -219,7 +220,7 @@ export const ApplicationsModule: React.FC = () => {
       {viewMode === 'kanban' ? (
         <div className="flex gap-4 overflow-x-auto pb-4 items-start">
           {STREAMLINED_STAGES.map(stage => {
-            const stageApps = filteredApps.filter(a => a.stage === stage);
+            const stageApps = filteredApps.filter(a => normalizePipelineStage(a.stage) === stage);
             return (
               <div
                 key={stage}

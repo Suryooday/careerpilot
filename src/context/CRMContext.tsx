@@ -14,6 +14,7 @@ import { analyzeATS } from '../utils/atsScorer';
 import { generateRAGEmailDraft } from '../utils/ragEmailEngine';
 import { sendViaGmailAPI, syncGmailInbox } from '../services/gmailService';
 import { syncApplicationsToSupabase } from '../lib/supabaseClient';
+import { normalizePipelineStage } from '../utils/stageNormalizer';
 
 export type ActiveTab =
   | 'dashboard'
@@ -165,7 +166,11 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [applications, setApplications] = useState<Application[]>(() => {
     const saved = localStorage.getItem('cp_applications');
-    return saved ? JSON.parse(saved) : initialApplications;
+    const rawList: Application[] = saved ? JSON.parse(saved) : initialApplications;
+    return rawList.map(a => ({
+      ...a,
+      stage: normalizePipelineStage(a.stage)
+    }));
   });
 
   const [companies, setCompanies] = useState<Company[]>(() => {
@@ -350,7 +355,8 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const location = cols[2] || 'Remote';
         const salaryRange = cols[3] || '$160,000 - $200,000';
         const workType = (cols[4] as any) || 'Hybrid';
-        const stage = (cols[5] as PipelineStage) || 'Companies';
+        const rawStage = cols[5];
+        const stage = normalizePipelineStage(rawStage);
         const priority = (cols[6] as any) || 'High';
         const jobDescription = cols[7] || `${roleTitle} role at ${companyName}`;
         const recruiterName = cols[8] || 'Hiring Manager';
