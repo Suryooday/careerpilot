@@ -43,6 +43,7 @@ export function AppContainer() {
   const [viewMode, setViewMode] = useState<'landing' | 'app'>('landing');
   const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Track strict authentication state
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
@@ -127,9 +128,17 @@ export function AppContainer() {
 
   return (
     <div className="flex h-screen bg-[#fdfbf7] text-stone-900 font-sans antialiased overflow-hidden">
-      <Sidebar onGoToHome={() => setViewMode('landing')} />
+      <Sidebar
+        onGoToHome={() => setViewMode('landing')}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Navbar onOpenAuth={() => setIsAuthOpen(true)} onSignOut={handleSignOut} />
+        <Navbar
+          onOpenAuth={() => setIsAuthOpen(true)}
+          onSignOut={handleSignOut}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
         <MainContent />
         <footer className="py-2 px-6 bg-[#fdfbf7] border-t border-stone-200 text-[10px] text-stone-400 flex items-center justify-between">
           <div className="flex items-center gap-2">
