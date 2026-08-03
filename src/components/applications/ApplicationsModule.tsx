@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Kanban, Table, Plus, Search, Upload, Database, X, Trash2, Eye, CheckCircle2, RefreshCw
+  Kanban, Table, Plus, Search, Upload, Database, X, Trash2, Eye, CheckCircle2, RefreshCw, Globe
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { PipelineStage } from '../../types/crm';
@@ -242,6 +242,18 @@ export const ApplicationsModule: React.FC = () => {
                               <p className="text-[11px] text-stone-500">{app.companyName}</p>
                             </div>
                           </div>
+                          {app.url && (
+                            <a
+                              href={app.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              title="Launch Careers Web Portal"
+                              className="p-1 rounded bg-stone-100 hover:bg-red-50 text-stone-400 hover:text-red-600 border border-stone-200 transition-colors"
+                            >
+                              <Globe className="w-3.5 h-3.5" />
+                            </a>
+                          )}
                         </div>
 
                         {app.recruiterName && (

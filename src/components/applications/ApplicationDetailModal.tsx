@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ExternalLink, Send, Trash2, Mail, Sparkles, User, Briefcase, MapPin, DollarSign, Tag, Clock, Globe, Copy, CheckCircle2 } from 'lucide-react';
+import { X, ExternalLink, Send, Trash2, Mail, Sparkles, User, Briefcase, MapPin, DollarSign, Tag, Clock, Globe, Copy, CheckCircle2, FileText, Target, Zap } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { PipelineStage } from '../../types/crm';
 import { analyzeATS } from '../../utils/atsScorer';
@@ -19,7 +19,7 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
   const [activeTab, setActiveTabState] = useState<'info' | 'jd' | 'notes' | 'recruiter'>('info');
   const [newNoteText, setNewNoteText] = useState('');
   const [isGeneratingRAG, setIsGeneratingRAG] = useState(false);
-  const [copiedNote, setCopiedNote] = useState(false);
+  const [copiedType, setCopiedType] = useState<string | null>(null);
 
   const app = applications.find(a => a.id === appId);
   if (!app) return null;
@@ -48,13 +48,21 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
     addNotification('success', 'Recruiter Email Assigned', `Set contact email to ${selectedEmail}`);
   };
 
-  const handleCopyPortalNote = () => {
-    const noteText = `Hi ${app.companyName} Hiring Team,\n\nI am writing to apply for the ${app.roleTitle} position. With strong experience in ${resume?.skills.slice(0, 5).join(', ') || 'software engineering'}, I am eager to contribute to ${app.companyName}.\n\nBest regards,\n${profile.name}\n${profile.email}`;
-    navigator.clipboard.writeText(noteText);
-    setCopiedNote(true);
-    setTimeout(() => setCopiedNote(false), 2000);
-    addNotification('success', 'Copied to Clipboard', 'Quick cover note copied for Careers Portal form submission!');
+  const copyToClipboard = (text: string, typeLabel: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedType(typeLabel);
+    setTimeout(() => setCopiedType(null), 2000);
+    addNotification('success', 'Copied to Clipboard!', `${typeLabel} copied for Careers Portal submission.`);
   };
+
+  // 1. General Cover Note
+  const coverNoteText = `Dear ${app.companyName} Hiring Team,\n\nI am excited to submit my application for the ${app.roleTitle} position. With extensive experience in ${resume?.skills.slice(0, 5).join(', ') || 'full-stack software development'}, I have successfully built scalable high-throughput platforms. I am eager to bring my expertise to ${app.companyName}.\n\nSincerely,\n${profile.name}\n${profile.email}`;
+
+  // 2. Why Are You Interested in this role?
+  const whyInterestedText = `I am strongly drawn to ${app.companyName} because of your commitment to engineering excellence and industry innovation. As a ${profile.targetTitle || 'Software Engineer'}, I excel at building ${resume?.skills.slice(0, 3).join(', ') || 'high-performance systems'} and would love to contribute directly to the ${app.roleTitle} team.`;
+
+  // 3. 2-Sentence Elevator Pitch
+  const elevatorPitchText = `I am a ${profile.targetTitle || 'Software Engineer'} specializing in ${resume?.skills.slice(0, 4).join(', ') || 'modern software architecture'}. I hold a strong track record of shipping production features and optimizing system reliability under high traffic.`;
 
   const stages: PipelineStage[] = [
     'Companies',
@@ -166,38 +174,87 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
         <div className="p-6 space-y-6 flex-1">
           {activeTab === 'info' && (
             <div className="space-y-4">
-              {/* CAREERS PORTAL LINK & ACTION BANNER */}
-              {app.url ? (
-                <div className="p-4 bg-red-50/60 border border-red-200 rounded-xl space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-red-900 font-bold text-xs">
-                      <Globe className="w-4 h-4 text-red-600" />
-                      <span>Careers Web Portal Application</span>
-                    </div>
+              {/* 🚀 WEB PORTAL QUICK-APPLY & COVER NOTE HELPER */}
+              <div className="p-4 bg-red-50/70 border border-red-200 rounded-xl space-y-3 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-red-900 font-bold text-xs">
+                    <Globe className="w-4 h-4 text-red-600" />
+                    <span>🚀 Web Portal Quick-Apply & Cover Note Helper</span>
+                  </div>
+                  {app.url && (
                     <a
                       href={app.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
+                      className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-lg flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.98]"
                     >
-                      <span>Open Careers Portal</span>
+                      <span>1-Click Launch Portal</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
-                  </div>
+                  )}
+                </div>
 
-                  <p className="text-[11px] text-stone-600">
-                    Applying via company website? Click below to copy a quick tailored cover note for the form textarea!
-                  </p>
+                <p className="text-[11px] text-stone-600 leading-relaxed">
+                  Applying directly on Workday, Lever, Greenhouse, or company careers page? Click any response below to copy tailored text for portal form textareas:
+                </p>
 
+                {/* 3 Dedicated Copy Buttons for Form Textareas */}
+                <div className="grid grid-cols-1 gap-2 pt-1">
+                  {/* Button 1: General Cover Note */}
                   <button
-                    onClick={handleCopyPortalNote}
-                    className="w-full py-2 bg-white hover:bg-stone-100 border border-red-200 text-red-700 font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                    onClick={() => copyToClipboard(coverNoteText, 'Cover Note')}
+                    className="p-2.5 bg-white hover:bg-stone-50 border border-red-200 rounded-lg text-left flex items-center justify-between transition-all group"
                   >
-                    {copiedNote ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                    <span>{copiedNote ? 'Copied Cover Note!' : 'Copy Portal Quick Cover Note'}</span>
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-red-600 shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-stone-900 group-hover:text-red-700">1. General Cover Note (3 Lines)</p>
+                        <p className="text-[10px] text-stone-500 truncate max-w-xs">Dear {app.companyName} Hiring Team...</p>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-bold text-red-600 flex items-center gap-1">
+                      {copiedType === 'Cover Note' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedType === 'Cover Note' ? 'Copied!' : 'Copy'}</span>
+                    </span>
+                  </button>
+
+                  {/* Button 2: Why Interested? */}
+                  <button
+                    onClick={() => copyToClipboard(whyInterestedText, 'Why Interested')}
+                    className="p-2.5 bg-white hover:bg-stone-50 border border-red-200 rounded-lg text-left flex items-center justify-between transition-all group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Target className="w-4 h-4 text-red-600 shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-stone-900 group-hover:text-red-700">2. "Why Are You Interested in Role?"</p>
+                        <p className="text-[10px] text-stone-500 truncate max-w-xs">I am strongly drawn to {app.companyName} because...</p>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-bold text-red-600 flex items-center gap-1">
+                      {copiedType === 'Why Interested' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedType === 'Why Interested' ? 'Copied!' : 'Copy'}</span>
+                    </span>
+                  </button>
+
+                  {/* Button 3: Elevator Pitch */}
+                  <button
+                    onClick={() => copyToClipboard(elevatorPitchText, 'Elevator Pitch')}
+                    className="p-2.5 bg-white hover:bg-stone-50 border border-red-200 rounded-lg text-left flex items-center justify-between transition-all group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-red-600 shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-stone-900 group-hover:text-red-700">3. 2-Sentence Elevator Pitch</p>
+                        <p className="text-[10px] text-stone-500 truncate max-w-xs">I am a {profile.targetTitle || 'Software Engineer'} specializing in...</p>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-bold text-red-600 flex items-center gap-1">
+                      {copiedType === 'Elevator Pitch' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedType === 'Elevator Pitch' ? 'Copied!' : 'Copy'}</span>
+                    </span>
                   </button>
                 </div>
-              ) : null}
+              </div>
 
               <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl space-y-3">
                 <h4 className="text-xs font-bold text-stone-900 uppercase">Key Candidate Application Information</h4>
