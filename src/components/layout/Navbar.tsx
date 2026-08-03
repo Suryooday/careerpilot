@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Search, Bell, Sparkles, User, RefreshCw, X, Bot, LogIn } from 'lucide-react';
+import { Search, Bell, Sparkles, User, RefreshCw, X, Bot, LogIn, LogOut } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 
 interface Props {
   onOpenAuth?: () => void;
+  onSignOut?: () => void;
 }
 
-export const Navbar: React.FC<Props> = ({ onOpenAuth }) => {
+export const Navbar: React.FC<Props> = ({ onOpenAuth, onSignOut }) => {
   const {
     activeTab, profile, setIsAddAppModalOpen, setIsCopilotDrawerOpen,
     notifications, dismissNotification, resetToDefaultSeed, applications
@@ -116,20 +117,22 @@ export const Navbar: React.FC<Props> = ({ onOpenAuth }) => {
           )}
         </div>
 
-        {/* Supabase Auth Trigger Button */}
-        <button
-          onClick={onOpenAuth}
-          className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 font-bold text-xs rounded-lg flex items-center gap-1.5 transition-all shadow-xs"
-        >
-          <LogIn className="w-3.5 h-3.5 text-red-600" />
-          <span>{profile.name ? profile.name.split(' ')[0] : 'Sign In'}</span>
-        </button>
-
-        {/* User Profile Avatar */}
-        <div className="flex items-center gap-2 pl-1">
+        {/* User Profile Avatar & Sign Out */}
+        <div className="flex items-center gap-2 pl-2 border-l border-stone-200">
           <div className="w-7 h-7 rounded-lg bg-red-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
             {profile.name ? profile.name.charAt(0).toUpperCase() : 'U'}
           </div>
+
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              title="Sign Out of Account"
+              className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-600 hover:text-red-600 transition-all shadow-xs flex items-center gap-1 text-[11px] font-bold"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

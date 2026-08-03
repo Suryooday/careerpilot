@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CRMProvider, useCRM } from './context/CRMContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Navbar } from './components/layout/Navbar';
@@ -17,6 +17,7 @@ import { OnboardingModal } from './components/onboarding/OnboardingModal';
 import { LegalModals } from './components/privacy/LegalModals';
 import { LandingPage } from './components/landing/LandingPage';
 import { AuthModal } from './components/auth/AuthModal';
+import { ShieldAlert, LogIn } from 'lucide-react';
 
 const MainContent: React.FC = () => {
   const { activeTab } = useCRM();
@@ -38,30 +39,89 @@ const MainContent: React.FC = () => {
 };
 
 export function AppContainer() {
-  const { profile } = useCRM();
+  const { profile, addNotification } = useCRM();
   const [viewMode, setViewMode] = useState<'landing' | 'app'>('landing');
   const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  
+  // Track strict authentication state
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    return localStorage.getItem('cp_is_logged_in') === 'true';
+  });
 
-  const handleLaunch = () => {
+  const handleLaunchRequest = () => {
+    if (isLoggedIn) {
+      setViewMode('app');
+    } else {
+      // Require Sign In first!
+      addNotification('warning', 'Sign In Required', 'Please sign in or create an account to access candidate dashboard.');
+      setIsAuthOpen(true);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setIsLoggedIn(true);
+    localStorage.setItem('cp_is_logged_in', 'true');
     setViewMode('app');
+  };
+
+  const handleSignOut = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('cp_is_logged_in');
+    setViewMode('landing');
+    addNotification('info', 'Signed Out', 'You have been signed out successfully.');
   };
 
   if (viewMode === 'landing') {
     return (
       <>
         <LandingPage
-          onLaunchDashboard={handleLaunch}
+          onLaunchDashboard={handleLaunchRequest}
           onOpenAuth={() => setIsAuthOpen(true)}
         />
         <AuthModal
           isOpen={isAuthOpen}
-          onClose={() => {
-            setIsAuthOpen(false);
-            setViewMode('app');
-          }}
+          onClose={() => setIsAuthOpen(false)}
+          onSuccess={handleAuthSuccess}
         />
       </>
+    );
+  }
+
+  // STRICT AUTH GUARD: If user is not logged in, show Auth Guard Screen
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-[#fdfbf7] flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center shadow-xs">
+          <ShieldAlert className="w-6 h-6" />
+        </div>
+        <h2 className="text-xl font-extrabold text-stone-900 font-outfit">Authentication Required</h2>
+        <p className="text-xs text-stone-600 max-w-sm">
+          You must sign in or create a Supabase account before accessing candidate application pipelines and dashboard.
+        </p>
+
+        <div className="flex items-center gap-3 pt-2">
+          <button
+            onClick={() => setIsAuthOpen(true)}
+            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl shadow-sm flex items-center gap-2"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>Sign In Now</span>
+          </button>
+          <button
+            onClick={() => setViewMode('landing')}
+            className="px-4 py-2.5 bg-white border border-stone-200 text-stone-700 font-bold text-xs rounded-xl"
+          >
+            Back to Home
+          </button>
+        </div>
+
+        <AuthModal
+          isOpen={isAuthOpen}
+          onClose={() => setIsAuthOpen(false)}
+          onSuccess={handleAuthSuccess}
+        />
+      </div>
     );
   }
 
@@ -69,7 +129,7 @@ export function AppContainer() {
     <div className="flex h-screen bg-[#fdfbf7] text-stone-900 font-sans antialiased overflow-hidden">
       <Sidebar onGoToHome={() => setViewMode('landing')} />
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Navbar onOpenAuth={() => setIsAuthOpen(true)} />
+        <Navbar onOpenAuth={() => setIsAuthOpen(true)} onSignOut={handleSignOut} />
         <MainContent />
         <footer className="py-2 px-6 bg-[#fdfbf7] border-t border-stone-200 text-[10px] text-stone-400 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -93,7 +153,7 @@ export function AppContainer() {
       <AICopilotDrawer />
       <OnboardingModal />
       <LegalModals type={legalModal} onClose={() => setLegalModal(null)} />
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onSuccess={handleAuthSuccess} />
     </div>
   );
 }

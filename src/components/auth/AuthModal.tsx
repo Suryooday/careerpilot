@@ -6,9 +6,10 @@ import { signUpWithEmail, signInWithEmail } from '../../lib/supabaseClient';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
+export const AuthModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
   const { updateProfile, addNotification } = useCRM();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
@@ -33,16 +34,19 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
           return;
         }
         const data = await signUpWithEmail(email, password, name);
-        updateProfile({ name, email, isOnboarded: true });
+        updateProfile({ name, email, isOnboarded: false });
+        localStorage.setItem('cp_is_logged_in', 'true');
         addNotification('success', 'Account Created!', 'Supabase registration successful. Welcome!');
       } else {
         const data = await signInWithEmail(email, password);
         const userName = data.user?.user_metadata?.name || email.split('@')[0];
         updateProfile({ name: userName, email, isOnboarded: true });
+        localStorage.setItem('cp_is_logged_in', 'true');
         addNotification('success', 'Signed In!', `Welcome back, ${userName}!`);
       }
       setLoading(false);
       onClose();
+      if (onSuccess) onSuccess();
     } catch (err: any) {
       setLoading(false);
       setError(err?.message || 'Authentication failed. Please check your details.');
@@ -60,9 +64,9 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h2 className="text-xs font-extrabold text-stone-900 font-outfit uppercase tracking-wider">
-                {mode === 'signin' ? 'Sign In to CareerPilot AI' : 'Create Supabase Account'}
+                {mode === 'signin' ? 'Sign In to Access Dashboard' : 'Create Supabase Account'}
               </h2>
-              <p className="text-[11px] text-stone-500">Cloud database & OAuth session</p>
+              <p className="text-[11px] text-stone-500">Authentication required for CRM access</p>
             </div>
           </div>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-700">
@@ -156,7 +160,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
               disabled={loading}
               className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
             >
-              {loading ? 'Connecting to Supabase...' : mode === 'signin' ? 'Sign In' : 'Create Supabase Account'}
+              {loading ? 'Connecting to Supabase...' : mode === 'signin' ? 'Sign In & Access Dashboard' : 'Create Account & Continue'}
             </button>
           </div>
         </form>
