@@ -145,9 +145,9 @@ export const ApplicationsModule: React.FC = () => {
       {/* Header Toolbar */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white border border-stone-200 p-4 rounded-xl shadow-sm">
         <div>
-          <h2 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Candidate Applications Board</h2>
+          <h2 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Active HR Outreach Pipeline (Applications)</h2>
           <p className="text-[11px] text-stone-500">
-            {applications.length} applications tracked • Drag & drop between pipeline stages
+            {applications.length} active applications with recruiter emails • Drag & drop between stages or send 1-click Gmail outreach
           </p>
         </div>
 
