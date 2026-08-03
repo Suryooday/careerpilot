@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Settings, Save, Mail, Cpu, Sparkles, Key, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Settings, Save, Mail, Cpu, Sparkles, Key, ExternalLink, CheckCircle2, Database, User, Briefcase, FileText } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { requestGoogleOneClickAuth } from '../../services/gmailService';
 
 export const SettingsModule: React.FC = () => {
-  const { profile, updateProfile, addNotification } = useCRM();
+  const { profile, updateProfile, masterProfile, updateMasterProfile, addNotification } = useCRM();
 
   const [name, setName] = useState(profile.name);
   const [email, setEmail] = useState(profile.email);
@@ -15,6 +15,10 @@ export const SettingsModule: React.FC = () => {
   const [gmailClientId, setGmailClientId] = useState(profile.gmailClientId || '219885217250-k2s6hq6dgurqppjlk6vp2lp6p0j3adf0.apps.googleusercontent.com');
   const [groqApiKey, setGroqApiKey] = useState(profile.groqApiKey || '');
   const [geminiApiKey, setGeminiApiKey] = useState(profile.geminiApiKey || '');
+
+  // Master profile fields
+  const [skillsText, setSkillsText] = useState(masterProfile.skills.join(', '));
+  const [bioSummary, setBioSummary] = useState(masterProfile.summary || '');
 
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
 
@@ -37,6 +41,8 @@ export const SettingsModule: React.FC = () => {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Update profile state
     updateProfile({
       name,
       email,
@@ -48,61 +54,140 @@ export const SettingsModule: React.FC = () => {
       groqApiKey,
       geminiApiKey
     });
+
+    // Update master profile skills
+    const parsedSkills = skillsText.split(',').map(s => s.trim()).filter(Boolean);
+    updateMasterProfile({
+      skills: parsedSkills,
+      summary: bioSummary
+    });
+
+    addNotification('success', 'Settings Saved!', 'Profile and Supabase configurations updated successfully.');
   };
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      <div className="flex items-center gap-3 bg-white border border-stone-200 p-4 rounded-xl shadow-sm">
-        <div className="p-2 rounded-lg bg-red-50 text-red-600">
-          <Settings className="w-5 h-5" />
+      {/* Header Banner */}
+      <div className="flex items-center justify-between bg-white border border-stone-200 p-4 rounded-xl shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-red-50 text-red-600">
+            <Settings className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Candidate Profile & Integration Settings</h2>
+            <p className="text-[11px] text-stone-500">Manage your identity, target roles, Supabase database, and AI credentials</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xs font-bold text-stone-900 uppercase tracking-wider">Settings & 1-Click API Connections</h2>
-          <p className="text-[11px] text-stone-500">Normal users can simply click "Connect Gmail" to sign in with 1 click!</p>
+
+        {/* Supabase Status Badge */}
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-lg">
+          <Database className="w-3.5 h-3.5" />
+          <span>Supabase Cloud Connected</span>
         </div>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
-        {/* Profile Settings */}
+        {/* Candidate Identity & Target Salary */}
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4 shadow-sm">
-          <h3 className="text-xs font-bold text-stone-900 uppercase">Profile Settings</h3>
+          <div className="flex items-center gap-2 pb-2 border-b border-stone-100">
+            <User className="w-4 h-4 text-red-600" />
+            <h3 className="text-xs font-bold text-stone-900 uppercase">Personal Identity & Career Goals</h3>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-bold text-stone-600 uppercase">Full Name</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-900 font-bold" />
+              <label className="text-[10px] font-bold text-stone-600 uppercase">Full Name *</label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-red-600"
+              />
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-stone-600 uppercase">Email Address</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-900" />
+              <label className="text-[10px] font-bold text-stone-600 uppercase">Email Address *</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-900 focus:outline-none focus:border-red-600"
+              />
             </div>
           </div>
 
           <div>
-            <label className="text-[10px] font-bold text-stone-600 uppercase">Target Job Title</label>
-            <input type="text" value={targetTitle} onChange={e => setTargetTitle(e.target.value)} className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-red-700 font-bold" />
+            <label className="text-[10px] font-bold text-stone-600 uppercase">Target Job Title *</label>
+            <input
+              type="text"
+              required
+              value={targetTitle}
+              onChange={e => setTargetTitle(e.target.value)}
+              className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-red-700 font-bold focus:outline-none focus:border-red-600"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-bold text-stone-600 uppercase">Salary Target Min ($ USD)</label>
-              <input type="number" value={desiredSalaryMin} onChange={e => setDesiredSalaryMin(Number(e.target.value))} className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-900 font-bold" />
+              <label className="text-[10px] font-bold text-stone-600 uppercase">Target Minimum Salary ($ USD)</label>
+              <input
+                type="number"
+                value={desiredSalaryMin}
+                onChange={e => setDesiredSalaryMin(Number(e.target.value))}
+                className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-red-600"
+              />
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-stone-600 uppercase">Salary Target Max ($ USD)</label>
-              <input type="number" value={desiredSalaryMax} onChange={e => setDesiredSalaryMax(Number(e.target.value))} className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-900 font-bold" />
+              <label className="text-[10px] font-bold text-stone-600 uppercase">Target Maximum Salary ($ USD)</label>
+              <input
+                type="number"
+                value={desiredSalaryMax}
+                onChange={e => setDesiredSalaryMax(Number(e.target.value))}
+                className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-red-600"
+              />
             </div>
           </div>
         </div>
 
-        {/* 1-CLICK GMAIL OAUTH CONNECTION (FOR NORMAL USERS) */}
+        {/* Master Skills & Professional Bio */}
+        <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4 shadow-sm">
+          <div className="flex items-center gap-2 pb-2 border-b border-stone-100">
+            <FileText className="w-4 h-4 text-red-600" />
+            <h3 className="text-xs font-bold text-stone-900 uppercase">Master Skills & AI Bio (For Outreach & Resume Ranking)</h3>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-stone-600 uppercase">Core Skills (Comma separated)</label>
+            <textarea
+              rows={2}
+              value={skillsText}
+              onChange={e => setSkillsText(e.target.value)}
+              placeholder="React, TypeScript, Node.js, Python, PostgreSQL, AWS, GraphQL, Docker"
+              className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg p-3 text-xs text-stone-900 focus:outline-none focus:border-red-600"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-stone-600 uppercase">Professional Summary / AI Executive Bio</label>
+            <textarea
+              rows={3}
+              value={bioSummary}
+              onChange={e => setBioSummary(e.target.value)}
+              placeholder="Senior Software Engineer with 5+ years of experience scaling distributed web platforms, high-throughput microservices, and leading frontend architecture..."
+              className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg p-3 text-xs text-stone-900 focus:outline-none focus:border-red-600"
+            />
+          </div>
+        </div>
+
+        {/* 1-CLICK GMAIL OAUTH CONNECTION */}
         <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-red-600" />
-              <h3 className="text-xs font-bold text-stone-900 uppercase">Gmail Integration (1-Click Connect for Normal Users)</h3>
+              <h3 className="text-xs font-bold text-stone-900 uppercase">Gmail Integration (1-Click Google OAuth)</h3>
             </div>
             {gmailApiKey && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 flex items-center gap-1">
@@ -113,7 +198,7 @@ export const SettingsModule: React.FC = () => {
           </div>
 
           <p className="text-xs text-stone-500 leading-relaxed">
-            Normal users don't need developer tools or technical setups! Simply click the Google sign-in button below to authorize Gmail sending & response auto-sync with 1 click.
+            Connect your Google Account to enable automatic recruiter response parsing and instant outreach email sending directly from CareerPilot!
           </p>
 
           <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -134,68 +219,74 @@ export const SettingsModule: React.FC = () => {
           </div>
         </div>
 
-        {/* Groq API Configuration */}
-        <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-red-600" />
-              <h3 className="text-xs font-bold text-stone-900 uppercase">Groq API Key (Resume Content Ranking & Overleaf LaTeX)</h3>
-            </div>
-            <a
-              href="https://console.groq.com/keys"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[10px] font-bold text-red-600 hover:underline flex items-center gap-1"
-            >
-              <span>Get Free Groq Key</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
+        {/* API Credentials */}
+        <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-4 shadow-sm">
+          <div className="flex items-center gap-2 pb-2 border-b border-stone-100">
+            <Key className="w-4 h-4 text-red-600" />
+            <h3 className="text-xs font-bold text-stone-900 uppercase">AI Service Credentials (Groq & Gemini)</h3>
           </div>
-          <div>
-            <label className="text-[10px] font-bold text-stone-600 uppercase">Your Personal Groq API Key</label>
-            <input
-              type="password"
-              placeholder="gsk_..."
-              value={groqApiKey}
-              onChange={e => setGroqApiKey(e.target.value)}
-              className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-900 font-mono"
-            />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-stone-600 uppercase flex items-center gap-1">
+                  <Cpu className="w-3.5 h-3.5 text-red-600" />
+                  <span>Groq API Key</span>
+                </span>
+                <a
+                  href="https://console.groq.com/keys"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[10px] font-bold text-red-600 hover:underline flex items-center gap-0.5"
+                >
+                  <span>Get Key</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <input
+                type="password"
+                placeholder="gsk_..."
+                value={groqApiKey}
+                onChange={e => setGroqApiKey(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-900 font-mono focus:outline-none focus:border-red-600"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-stone-600 uppercase flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-red-600" />
+                  <span>Gemini API Key</span>
+                </span>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[10px] font-bold text-red-600 hover:underline flex items-center gap-0.5"
+                >
+                  <span>Get Key</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <input
+                type="password"
+                placeholder="AIza..."
+                value={geminiApiKey}
+                onChange={e => setGeminiApiKey(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-900 font-mono focus:outline-none focus:border-red-600"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Gemini API Configuration */}
-        <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-red-600" />
-              <h3 className="text-xs font-bold text-stone-900 uppercase">Gemini API Key (Email Drafting & Copilot)</h3>
-            </div>
-            <a
-              href="https://aistudio.google.com/app/apikey"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[10px] font-bold text-red-600 hover:underline flex items-center gap-1"
-            >
-              <span>Get Free Gemini Key</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-          <div>
-            <label className="text-[10px] font-bold text-stone-600 uppercase">Your Personal Gemini API Key</label>
-            <input
-              type="password"
-              placeholder="AIza..."
-              value={geminiApiKey}
-              onChange={e => setGeminiApiKey(e.target.value)}
-              className="w-full mt-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-1.5 text-xs text-stone-900 font-mono"
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <button type="submit" className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-sm">
-            <Save className="w-3.5 h-3.5" />
-            <span>Save All Personal Credentials</span>
+        {/* Save Button */}
+        <div className="flex justify-end pt-2">
+          <button
+            type="submit"
+            className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-[0.98]"
+          >
+            <Save className="w-4 h-4" />
+            <span>Save All Profile & System Settings</span>
           </button>
         </div>
       </form>

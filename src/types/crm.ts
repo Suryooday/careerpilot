@@ -17,6 +17,7 @@ export interface MasterProfile {
   internships: { id: string; company: string; role: string; period: string; highlights: string }[];
   certifications: string[];
   education: string;
+  summary?: string;
 }
 
 export interface Application {
