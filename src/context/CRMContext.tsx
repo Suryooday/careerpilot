@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import {
   Application, Company, EmailMessage, EmailAttachment, ResumeVersion,
   CoverLetter, UserDocument, CRMTask, UserProfile,
-  PipelineStage, MasterProfile
+  PipelineStage, MasterProfile, TimelineEvent
 } from '../types/crm';
 import {
   initialProfile, initialCompanies, initialApplications,
@@ -112,6 +112,7 @@ interface CRMContextType {
   updateMasterProfile: (master: Partial<MasterProfile>) => void;
   addApplication: (app: Omit<Application, 'id' | 'appliedDate' | 'lastActivityDate' | 'notes' | 'timeline'>) => void;
   updateApplicationStage: (id: string, stage: PipelineStage) => void;
+  updateApplication: (id: string, updates: Partial<Application>) => void;
   deleteApplication: (id: string) => void;
   addNoteToApplication: (appId: string, noteText: string) => void;
   importCSVApplications: (csvText: string) => number;
@@ -264,32 +265,38 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateApplicationStage = (id: string, newStage: PipelineStage) => {
-    const today = new Date().toISOString().split('T')[0];
     setApplications(prev => prev.map(app => {
       if (app.id === id) {
         if (newStage === 'Accepted' && app.stage !== 'Accepted') {
           fireCelebration();
         }
+        const today = new Date().toISOString().split('T')[0];
+        const newTimelineEvent: TimelineEvent = {
+          id: 't-' + Date.now(),
+          date: today,
+          title: `Moved to ${newStage}`,
+          description: `Stage changed from ${app.stage} to ${newStage}`,
+          type: 'stage_change'
+        };
         return {
           ...app,
           stage: newStage,
           lastActivityDate: today,
-          timeline: [
-            {
-              id: 't-' + Date.now(),
-              date: today,
-              title: `Moved to ${newStage}`,
-              description: `Status changed to ${newStage}`,
-              type: 'stage_change'
-            },
-            ...app.timeline
-          ]
+          timeline: [newTimelineEvent, ...app.timeline]
         };
       }
       return app;
     }));
+    addNotification('info', 'Stage Updated', `Application moved to ${newStage}`);
+  };
 
-    addNotification('info', 'Stage Updated', `Moved to ${newStage}`);
+  const updateApplication = (id: string, updates: Partial<Application>) => {
+    setApplications(prev => prev.map(app => {
+      if (app.id === id) {
+        return { ...app, ...updates };
+      }
+      return app;
+    }));
   };
 
   const deleteApplication = (id: string) => {
@@ -595,6 +602,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateMasterProfile,
         addApplication,
         updateApplicationStage,
+        updateApplication,
         deleteApplication,
         addNoteToApplication,
         importCSVApplications,

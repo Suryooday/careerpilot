@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, ExternalLink, Send, Trash2, Mail, Sparkles, User, Briefcase, MapPin, DollarSign, Tag, Clock } from 'lucide-react';
+import { X, ExternalLink, Send, Trash2, Mail, Sparkles, User, Briefcase, MapPin, DollarSign, Tag, Clock, Globe, Copy, CheckCircle2 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { PipelineStage } from '../../types/crm';
 import { analyzeATS } from '../../utils/atsScorer';
+import { predictRecruiterEmails } from '../../utils/recruiterFinder';
 
 interface Props {
   appId: string;
@@ -11,19 +12,21 @@ interface Props {
 
 export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
   const {
-    applications, updateApplicationStage, addNoteToApplication, deleteApplication,
-    resumes, createDraftEmailFromApp, setActiveTab
+    applications, updateApplicationStage, updateApplication, addNoteToApplication, deleteApplication,
+    resumes, createDraftEmailFromApp, setActiveTab, addNotification, profile
   } = useCRM();
 
-  const [activeTab, setActiveTabState] = useState<'jd' | 'notes' | 'recruiter' | 'info'>('info');
+  const [activeTab, setActiveTabState] = useState<'info' | 'jd' | 'notes' | 'recruiter'>('info');
   const [newNoteText, setNewNoteText] = useState('');
   const [isGeneratingRAG, setIsGeneratingRAG] = useState(false);
+  const [copiedNote, setCopiedNote] = useState(false);
 
   const app = applications.find(a => a.id === appId);
   if (!app) return null;
 
   const resume = resumes.find(r => r.id === app.resumeVersionId);
   const atsResult = analyzeATS(app.jobDescription, resume?.contentSummary || '', resume?.skills || []);
+  const predictedEmails = predictRecruiterEmails(app.companyName, app.url);
 
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +41,19 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
     setIsGeneratingRAG(false);
     onClose();
     setActiveTab('email');
+  };
+
+  const handleAssignPredictedEmail = (selectedEmail: string) => {
+    updateApplication(app.id, { recruiterEmail: selectedEmail });
+    addNotification('success', 'Recruiter Email Assigned', `Set contact email to ${selectedEmail}`);
+  };
+
+  const handleCopyPortalNote = () => {
+    const noteText = `Hi ${app.companyName} Hiring Team,\n\nI am writing to apply for the ${app.roleTitle} position. With strong experience in ${resume?.skills.slice(0, 5).join(', ') || 'software engineering'}, I am eager to contribute to ${app.companyName}.\n\nBest regards,\n${profile.name}\n${profile.email}`;
+    navigator.clipboard.writeText(noteText);
+    setCopiedNote(true);
+    setTimeout(() => setCopiedNote(false), 2000);
+    addNotification('success', 'Copied to Clipboard', 'Quick cover note copied for Careers Portal form submission!');
   };
 
   const stages: PipelineStage[] = [
@@ -67,7 +83,7 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
                 <span>{app.location}</span>
                 {app.url && (
                   <a href={app.url} target="_blank" rel="noreferrer" className="text-red-600 font-bold hover:underline flex items-center gap-0.5">
-                    <span>Link</span>
+                    <span>Portal Link</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
@@ -80,7 +96,7 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
           </button>
         </div>
 
-        {/* Stage Strip & RAG Email Generator Button */}
+        {/* Stage Strip & Actions */}
         <div className="p-3 bg-stone-50 border-b border-stone-200 grid grid-cols-3 gap-3 text-center text-xs">
           <div className="p-2 bg-white border border-stone-200 rounded-lg">
             <p className="text-[10px] text-stone-400 uppercase font-bold">Stage</p>
@@ -142,7 +158,7 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
               activeTab === 'recruiter' ? 'border-red-600 text-red-600' : 'border-transparent text-stone-500'
             }`}
           >
-            Recruiter Details
+            Recruiter Details & AI Finder
           </button>
         </div>
 
@@ -150,6 +166,39 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
         <div className="p-6 space-y-6 flex-1">
           {activeTab === 'info' && (
             <div className="space-y-4">
+              {/* CAREERS PORTAL LINK & ACTION BANNER */}
+              {app.url ? (
+                <div className="p-4 bg-red-50/60 border border-red-200 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-red-900 font-bold text-xs">
+                      <Globe className="w-4 h-4 text-red-600" />
+                      <span>Careers Web Portal Application</span>
+                    </div>
+                    <a
+                      href={app.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-sm transition-all"
+                    >
+                      <span>Open Careers Portal</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+
+                  <p className="text-[11px] text-stone-600">
+                    Applying via company website? Click below to copy a quick tailored cover note for the form textarea!
+                  </p>
+
+                  <button
+                    onClick={handleCopyPortalNote}
+                    className="w-full py-2 bg-white hover:bg-stone-100 border border-red-200 text-red-700 font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                  >
+                    {copiedNote ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                    <span>{copiedNote ? 'Copied Cover Note!' : 'Copy Portal Quick Cover Note'}</span>
+                  </button>
+                </div>
+              ) : null}
+
               <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl space-y-3">
                 <h4 className="text-xs font-bold text-stone-900 uppercase">Key Candidate Application Information</h4>
                 
@@ -199,7 +248,7 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
                       <Mail className="w-3 h-3 text-red-600" />
                       <span>Recruiter Email</span>
                     </span>
-                    <p className="font-bold text-stone-900">{app.recruiterEmail || 'recruiter@company.com'}</p>
+                    <p className="font-bold text-stone-900">{app.recruiterEmail || 'Not set (Use AI Finder below)'}</p>
                   </div>
                 </div>
               </div>
@@ -297,10 +346,43 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
           {activeTab === 'recruiter' && (
             <div className="space-y-4">
               <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl space-y-2">
-                <h4 className="text-xs font-bold text-stone-900 uppercase">Recruiter Contact</h4>
+                <h4 className="text-xs font-bold text-stone-900 uppercase">Assigned Recruiter Contact</h4>
                 <div className="space-y-1 text-xs text-stone-800">
                   <p><strong>Name:</strong> {app.recruiterName || 'Hiring Manager'}</p>
-                  <p><strong>Email:</strong> {app.recruiterEmail || 'recruiter@company.com'}</p>
+                  <p><strong>Email:</strong> {app.recruiterEmail || 'Not assigned yet'}</p>
+                </div>
+              </div>
+
+              {/* SMART AI HR EMAIL FINDER / PREDICTOR */}
+              <div className="p-4 bg-white border border-stone-200 rounded-xl space-y-3 shadow-xs">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-red-600" />
+                  <h4 className="text-xs font-bold text-stone-900 uppercase">Smart AI HR Email Finder (Domain Predictor)</h4>
+                </div>
+                <p className="text-[11px] text-stone-500">
+                  No HR email address found? Select one of the predicted recruiter email addresses for <strong>{app.companyName}</strong> below to assign it with 1 click:
+                </p>
+
+                <div className="space-y-2">
+                  {predictedEmails.map(item => (
+                    <div key={item.email} className="p-2.5 bg-stone-50 border border-stone-200 rounded-lg flex items-center justify-between gap-3 text-xs">
+                      <div>
+                        <p className="font-bold text-stone-900 font-mono">{item.email}</p>
+                        <p className="text-[10px] text-stone-500">{item.label} • {item.confidence}</p>
+                      </div>
+
+                      <button
+                        onClick={() => handleAssignPredictedEmail(item.email)}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg border transition-all ${
+                          app.recruiterEmail === item.email
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            : 'bg-white hover:bg-stone-100 text-stone-800 border-stone-300'
+                        }`}
+                      >
+                        {app.recruiterEmail === item.email ? '✓ Assigned' : 'Use Email'}
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
