@@ -364,6 +364,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const rawRecruiterName = cols[8];
         const rawRecruiterEmail = cols[9];
         const rawPhone = cols[10];
+        const rawUrl = cols[11] || cols.find(c => c.startsWith('http://') || c.startsWith('https://')) || '';
 
         // Smart Contact Validation: Check if real HR email/phone is present
         const hasValidHREmail = rawRecruiterEmail && rawRecruiterEmail.includes('@') && !rawRecruiterEmail.includes('recruiter@company.com') && !rawRecruiterEmail.toLowerCase().includes('n/a');
@@ -398,6 +399,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           appliedDate: today,
           lastActivityDate: today,
           jobDescription,
+          url: rawUrl || undefined,
           atsScore: atsResult.score,
           matchedKeywords: atsResult.matchedKeywords,
           missingKeywords: atsResult.missingKeywords,
