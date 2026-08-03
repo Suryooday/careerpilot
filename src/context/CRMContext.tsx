@@ -114,6 +114,7 @@ interface CRMContextType {
   updateApplicationStage: (id: string, stage: PipelineStage) => void;
   updateApplication: (id: string, updates: Partial<Application>) => void;
   deleteApplication: (id: string) => void;
+  deleteAllApplications: () => void;
   addNoteToApplication: (appId: string, noteText: string) => void;
   importCSVApplications: (csvText: string) => number;
   
@@ -303,6 +304,13 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setApplications(prev => prev.filter(app => app.id !== id));
     if (selectedAppId === id) setSelectedAppId(null);
     addNotification('warning', 'Application Removed', 'Application deleted.');
+  };
+
+  const deleteAllApplications = () => {
+    setApplications([]);
+    setSelectedAppId(null);
+    localStorage.removeItem('cp_applications');
+    addNotification('warning', 'All Applications Cleared', 'Cleared all applications from pipeline.');
   };
 
   const addNoteToApplication = (appId: string, noteText: string) => {
@@ -604,6 +612,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateApplicationStage,
         updateApplication,
         deleteApplication,
+        deleteAllApplications,
         addNoteToApplication,
         importCSVApplications,
         addCompany,

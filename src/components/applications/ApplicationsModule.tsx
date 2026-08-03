@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Kanban, Table, Plus, Search, Upload, Database, X, Trash2, Eye, CheckCircle2, RefreshCw, Globe
+  Kanban, Table, Plus, Search, Upload, Database, X, Trash2, Eye, CheckCircle2, RefreshCw, Globe, AlertTriangle
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { PipelineStage } from '../../types/crm';
@@ -31,7 +31,7 @@ interface ParsedCSVRow {
 
 export const ApplicationsModule: React.FC = () => {
   const {
-    applications, updateApplicationStage, deleteApplication,
+    applications, updateApplicationStage, deleteApplication, deleteAllApplications,
     selectedAppId, setSelectedAppId, isAddAppModalOpen, setIsAddAppModalOpen,
     importCSVApplications, resetToDefaultSeed
   } = useCRM();
@@ -42,7 +42,6 @@ export const ApplicationsModule: React.FC = () => {
   
   // Modals state
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
-  const [isSeedModalOpen, setIsSeedModalOpen] = useState(false);
   const [csvInput, setCsvInput] = useState('');
   const [isProcessingCsv, setIsProcessingCsv] = useState(false);
 
@@ -57,6 +56,18 @@ export const ApplicationsModule: React.FC = () => {
     const matchesStage = selectedStageFilter === 'All' || app.stage === selectedStageFilter;
     return matchesSearch && matchesStage;
   });
+
+  const handleDeleteAll = () => {
+    if (confirm(`Are you sure you want to delete ALL ${applications.length} applications? This action cannot be undone.`)) {
+      deleteAllApplications();
+    }
+  };
+
+  const handleDeleteSingle = (id: string, roleTitle: string, companyName: string) => {
+    if (confirm(`Delete application for "${roleTitle}" at ${companyName}?`)) {
+      deleteApplication(id);
+    }
+  };
 
   // Helper to parse CSV text into row objects for preview
   const parseCSVRows = (text: string): ParsedCSVRow[] => {
@@ -164,11 +175,23 @@ export const ApplicationsModule: React.FC = () => {
           {/* Add App Button */}
           <button
             onClick={() => setIsAddAppModalOpen(true)}
-            className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-sm transition-all"
+            className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-sm transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Add Application</span>
           </button>
+
+          {/* DELETE ALL BUTTON */}
+          {applications.length > 0 && (
+            <button
+              onClick={handleDeleteAll}
+              title="Delete All Applications"
+              className="px-3.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-lg border border-red-200 text-xs flex items-center gap-1.5 transition-all"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete All ({applications.length})</span>
+            </button>
+          )}
 
           {/* View Mode Toggle */}
           <div className="flex bg-stone-100 border border-stone-200 p-0.5 rounded-lg">
@@ -273,15 +296,25 @@ export const ApplicationsModule: React.FC = () => {
                           </span>
                         </div>
 
+                        {/* Card Footer Actions: Stage Selector & Delete One by One Trash Button */}
                         <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-[11px]" onClick={e => e.stopPropagation()}>
-                          <span className="text-stone-400">{app.appliedDate}</span>
-                          <select
-                            value={app.stage}
-                            onChange={(e) => updateApplicationStage(app.id, e.target.value as PipelineStage)}
-                            className="bg-stone-50 text-[10px] text-stone-800 font-bold border border-stone-200 rounded px-1.5 py-0.5 focus:outline-none cursor-pointer"
+                          <div className="flex items-center gap-1.5">
+                            <select
+                              value={app.stage}
+                              onChange={(e) => updateApplicationStage(app.id, e.target.value as PipelineStage)}
+                              className="bg-stone-50 text-[10px] text-stone-800 font-bold border border-stone-200 rounded px-1.5 py-0.5 focus:outline-none cursor-pointer"
+                            >
+                              {STREAMLINED_STAGES.map(s => <option key={s} value={s}>Move to {s}</option>)}
+                            </select>
+                          </div>
+
+                          <button
+                            onClick={() => handleDeleteSingle(app.id, app.roleTitle, app.companyName)}
+                            title="Delete this application"
+                            className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                           >
-                            {STREAMLINED_STAGES.map(s => <option key={s} value={s}>Move to {s}</option>)}
-                          </select>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
                     ))
@@ -335,9 +368,18 @@ export const ApplicationsModule: React.FC = () => {
                   </td>
                   <td className="p-3.5"><span className="font-extrabold text-stone-900">{app.atsScore}%</span></td>
                   <td className="p-3.5 text-right">
-                    <button onClick={() => setSelectedAppId(app.id)} className="px-2.5 py-1 rounded bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 font-bold">
-                      View All Info
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => setSelectedAppId(app.id)} className="px-2.5 py-1 rounded bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 font-bold">
+                        View Info
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSingle(app.id, app.roleTitle, app.companyName)}
+                        title="Delete application"
+                        className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded border border-stone-200 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -346,7 +388,7 @@ export const ApplicationsModule: React.FC = () => {
         </div>
       )}
 
-      {/* CSV Import Modal with 5-Row Live Preview & Progress Loading State */}
+      {/* CSV Import Modal */}
       {isCsvModalOpen && (
         <div className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="w-full max-w-2xl bg-white border border-stone-200 rounded-xl overflow-hidden shadow-xl space-y-4 p-6">
