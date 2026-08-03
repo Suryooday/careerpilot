@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ExternalLink, Send, Trash2, Mail, Sparkles } from 'lucide-react';
+import { X, ExternalLink, Send, Trash2, Mail, Sparkles, User, Briefcase, MapPin, DollarSign, Tag, Clock } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { PipelineStage } from '../../types/crm';
 import { analyzeATS } from '../../utils/atsScorer';
@@ -15,7 +15,7 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
     resumes, createDraftEmailFromApp, setActiveTab
   } = useCRM();
 
-  const [activeTab, setActiveTabState] = useState<'jd' | 'notes' | 'recruiter'>('jd');
+  const [activeTab, setActiveTabState] = useState<'jd' | 'notes' | 'recruiter' | 'info'>('info');
   const [newNoteText, setNewNoteText] = useState('');
   const [isGeneratingRAG, setIsGeneratingRAG] = useState(false);
 
@@ -56,11 +56,9 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
         {/* Header */}
         <div className="p-5 border-b border-stone-200 bg-[#fdfbf7] sticky top-0 z-10 flex items-start justify-between gap-4">
           <div className="flex items-start gap-3.5">
-            <img
-              src={app.companyLogo || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=80'}
-              alt={app.companyName}
-              className="w-11 h-11 rounded object-cover border border-stone-200"
-            />
+            <div className="w-11 h-11 rounded bg-stone-100 border border-stone-200 flex items-center justify-center font-extrabold text-base text-stone-700">
+              {app.companyName.charAt(0)}
+            </div>
             <div>
               <h2 className="text-base font-extrabold text-stone-900 font-outfit leading-tight">{app.roleTitle}</h2>
               <p className="text-xs text-stone-500 flex items-center gap-2 mt-0.5">
@@ -107,16 +105,24 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
               className="w-full h-full py-1 px-2 bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] rounded flex items-center justify-center gap-1 shadow-xs"
             >
               <Sparkles className="w-3 h-3" />
-              <span>{isGeneratingRAG ? 'RAG Email...' : 'RAG Human Email'}</span>
+              <span>{isGeneratingRAG ? 'Generating...' : 'Draft RAG Email'}</span>
             </button>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-stone-200 px-6 bg-[#fdfbf7]">
+        <div className="flex border-b border-stone-200 px-6 bg-[#fdfbf7] overflow-x-auto">
+          <button
+            onClick={() => setActiveTabState('info')}
+            className={`py-3 px-3 text-xs font-bold border-b-2 transition-all shrink-0 ${
+              activeTab === 'info' ? 'border-red-600 text-red-600' : 'border-transparent text-stone-500'
+            }`}
+          >
+            Imported Application Details
+          </button>
           <button
             onClick={() => setActiveTabState('jd')}
-            className={`py-3 px-3 text-xs font-bold border-b-2 transition-all ${
+            className={`py-3 px-3 text-xs font-bold border-b-2 transition-all shrink-0 ${
               activeTab === 'jd' ? 'border-red-600 text-red-600' : 'border-transparent text-stone-500'
             }`}
           >
@@ -124,15 +130,15 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
           </button>
           <button
             onClick={() => setActiveTabState('notes')}
-            className={`py-3 px-3 text-xs font-bold border-b-2 transition-all ${
+            className={`py-3 px-3 text-xs font-bold border-b-2 transition-all shrink-0 ${
               activeTab === 'notes' ? 'border-red-600 text-red-600' : 'border-transparent text-stone-500'
             }`}
           >
-            Saved Notes ({app.notes.length})
+            Notes ({app.notes.length})
           </button>
           <button
             onClick={() => setActiveTabState('recruiter')}
-            className={`py-3 px-3 text-xs font-bold border-b-2 transition-all ${
+            className={`py-3 px-3 text-xs font-bold border-b-2 transition-all shrink-0 ${
               activeTab === 'recruiter' ? 'border-red-600 text-red-600' : 'border-transparent text-stone-500'
             }`}
           >
@@ -142,6 +148,80 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
 
         {/* Tab Body */}
         <div className="p-6 space-y-6 flex-1">
+          {activeTab === 'info' && (
+            <div className="space-y-4">
+              <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl space-y-3">
+                <h4 className="text-xs font-bold text-stone-900 uppercase">Key Candidate Application Information</h4>
+                
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
+                      <Briefcase className="w-3 h-3 text-red-600" />
+                      <span>Company Name</span>
+                    </span>
+                    <p className="font-bold text-stone-900">{app.companyName}</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
+                      <User className="w-3 h-3 text-red-600" />
+                      <span>Role Title</span>
+                    </span>
+                    <p className="font-bold text-stone-900">{app.roleTitle}</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-red-600" />
+                      <span>Location & Work Type</span>
+                    </span>
+                    <p className="font-bold text-stone-900">{app.location} ({app.workType})</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
+                      <DollarSign className="w-3 h-3 text-red-600" />
+                      <span>Salary Range</span>
+                    </span>
+                    <p className="font-bold text-stone-900">{app.salaryRange || 'N/A'}</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
+                      <User className="w-3 h-3 text-red-600" />
+                      <span>Recruiter Contact</span>
+                    </span>
+                    <p className="font-bold text-stone-900">{app.recruiterName || 'Hiring Manager'}</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
+                      <Mail className="w-3 h-3 text-red-600" />
+                      <span>Recruiter Email</span>
+                    </span>
+                    <p className="font-bold text-stone-900">{app.recruiterEmail || 'recruiter@company.com'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {app.tags && app.tags.length > 0 && (
+                <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-1.5">
+                  <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
+                    <Tag className="w-3 h-3 text-red-600" />
+                    <span>Imported Tags</span>
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {app.tags.map(t => (
+                      <span key={t} className="px-2 py-0.5 rounded text-[10px] font-bold bg-white text-stone-800 border border-stone-200">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'jd' && (
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-2">
@@ -219,8 +299,8 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
               <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl space-y-2">
                 <h4 className="text-xs font-bold text-stone-900 uppercase">Recruiter Contact</h4>
                 <div className="space-y-1 text-xs text-stone-800">
-                  <p><strong>Name:</strong> {app.recruiterName || 'Sarah Jenkins'}</p>
-                  <p><strong>Email:</strong> {app.recruiterEmail || 'sjenkins@stripe.com'}</p>
+                  <p><strong>Name:</strong> {app.recruiterName || 'Hiring Manager'}</p>
+                  <p><strong>Email:</strong> {app.recruiterEmail || 'recruiter@company.com'}</p>
                 </div>
               </div>
             </div>
