@@ -344,6 +344,8 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (lines.length < 2) return 0;
 
     let importedCount = 0;
+    let appSectionCount = 0;
+    let companySectionCount = 0;
     const today = new Date().toISOString().split('T')[0];
     const newApps: Application[] = [];
 
@@ -359,8 +361,26 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const stage = normalizePipelineStage(rawStage);
         const priority = (cols[6] as any) || 'High';
         const jobDescription = cols[7] || `${roleTitle} role at ${companyName}`;
-        const recruiterName = cols[8] || 'Hiring Manager';
-        const recruiterEmail = cols[9] || 'recruiter@company.com';
+        const rawRecruiterName = cols[8];
+        const rawRecruiterEmail = cols[9];
+        const rawPhone = cols[10];
+
+        // Smart Contact Validation: Check if real HR email/phone is present
+        const hasValidHREmail = rawRecruiterEmail && rawRecruiterEmail.includes('@') && !rawRecruiterEmail.includes('recruiter@company.com') && !rawRecruiterEmail.toLowerCase().includes('n/a');
+        const hasValidHRPhone = rawPhone && rawPhone.length >= 7;
+        const hasHRContact = Boolean(hasValidHREmail || hasValidHRPhone);
+
+        const recruiterName = hasHRContact ? (rawRecruiterName || 'Hiring Manager') : '';
+        const recruiterEmail = hasValidHREmail ? rawRecruiterEmail : '';
+        const recruiterPhone = hasValidHRPhone ? rawPhone : '';
+        const applicationMethod = hasHRContact ? 'Direct Email' : 'Careers Portal';
+        const portalStatus = hasHRContact ? undefined : 'Imported';
+
+        if (hasHRContact) {
+          appSectionCount++;
+        } else {
+          companySectionCount++;
+        }
 
         const primaryResume = resumes.find(r => r.isPrimary) || resumes[0];
         const atsResult = analyzeATS(jobDescription, primaryResume?.contentSummary || '', primaryResume?.skills || []);
@@ -383,11 +403,14 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           missingKeywords: atsResult.missingKeywords,
           recruiterName,
           recruiterEmail,
+          recruiterPhone,
+          applicationMethod,
+          portalStatus,
           notes: [],
           timeline: [
-            { id: 't-csv-' + i, date: today, title: 'Imported via CSV', description: 'Batch import', type: 'stage_change' }
+            { id: 't-csv-' + i, date: today, title: 'Imported via File', description: hasHRContact ? 'Routed to Applications (HR Email)' : 'Routed to Companies (Careers Portal)', type: 'stage_change' }
           ],
-          tags: ['CSV Import']
+          tags: ['File Import', hasHRContact ? 'HR Email' : 'Careers Portal']
         });
         importedCount++;
       }
@@ -395,7 +418,11 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (newApps.length > 0) {
       setApplications(prev => [...newApps, ...prev]);
-      addNotification('success', 'CSV Import Complete', `Imported ${importedCount} applications.`);
+      addNotification(
+        'success',
+        'Smart File Import Completed!',
+        `Imported ${importedCount} jobs: ${appSectionCount} routed to Applications (HR Contact) and ${companySectionCount} routed to Companies (Careers Portals).`
+      );
     }
 
     return importedCount;

@@ -46,6 +46,7 @@ export interface Application {
   recruiterEmail?: string;
   recruiterPhone?: string;
   applicationMethod?: 'Direct Email' | 'Careers Portal';
+  portalStatus?: 'Imported' | 'Applied';
   notes: Note[];
   timeline: TimelineEvent[];
   tags: string[];
