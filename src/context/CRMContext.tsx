@@ -13,6 +13,7 @@ import {
 import { analyzeATS } from '../utils/atsScorer';
 import { generateRAGEmailDraft } from '../utils/ragEmailEngine';
 import { sendViaGmailAPI, syncGmailInbox } from '../services/gmailService';
+import { syncApplicationsToSupabase } from '../lib/supabaseClient';
 
 export type ActiveTab =
   | 'dashboard'
@@ -197,7 +198,10 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => { localStorage.setItem('cp_profile', JSON.stringify(profile)); }, [profile]);
   useEffect(() => { localStorage.setItem('cp_master_profile', JSON.stringify(masterProfile)); }, [masterProfile]);
-  useEffect(() => { localStorage.setItem('cp_applications', JSON.stringify(applications)); }, [applications]);
+  useEffect(() => {
+    localStorage.setItem('cp_applications', JSON.stringify(applications));
+    syncApplicationsToSupabase(applications);
+  }, [applications]);
   useEffect(() => { localStorage.setItem('cp_companies', JSON.stringify(companies)); }, [companies]);
   useEffect(() => { localStorage.setItem('cp_emails', JSON.stringify(emails)); }, [emails]);
   useEffect(() => { localStorage.setItem('cp_resumes', JSON.stringify(resumes)); }, [resumes]);
