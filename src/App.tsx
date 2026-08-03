@@ -38,15 +38,29 @@ const MainContent: React.FC = () => {
 };
 
 export function AppContainer() {
+  const { profile } = useCRM();
   const [viewMode, setViewMode] = useState<'landing' | 'app'>('landing');
   const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
+  const handleLaunch = () => {
+    setViewMode('app');
+  };
+
   if (viewMode === 'landing') {
     return (
       <>
-        <LandingPage onLaunchDashboard={() => setViewMode('app')} />
-        <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+        <LandingPage
+          onLaunchDashboard={handleLaunch}
+          onOpenAuth={() => setIsAuthOpen(true)}
+        />
+        <AuthModal
+          isOpen={isAuthOpen}
+          onClose={() => {
+            setIsAuthOpen(false);
+            setViewMode('app');
+          }}
+        />
       </>
     );
   }
