@@ -89,12 +89,10 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
                 <span className="font-bold text-stone-800">{app.companyName}</span>
                 <span>•</span>
                 <span>{app.location}</span>
-                {app.url && (
-                  <a href={app.url} target="_blank" rel="noreferrer" className="text-red-600 font-bold hover:underline flex items-center gap-0.5">
-                    <span>Portal Link</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
+                <a href={app.url || `https://${app.companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com/careers`} target="_blank" rel="noreferrer" className="text-red-600 font-bold hover:underline flex items-center gap-0.5">
+                  <span>Portal Link</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </p>
             </div>
           </div>
@@ -181,17 +179,21 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
                     <Globe className="w-4 h-4 text-red-600" />
                     <span>🚀 Web Portal Quick-Apply & Cover Note Helper</span>
                   </div>
-                  {app.url && (
-                    <a
-                      href={app.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-lg flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.98]"
-                    >
-                      <span>1-Click Launch Portal</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
+                  {(() => {
+                    const raw = app.url || `https://${app.companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com/careers`;
+                    const portalUrl = raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
+                    return (
+                      <a
+                        href={portalUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-lg flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.98]"
+                      >
+                        <span>1-Click Launch Portal</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    );
+                  })()}
                 </div>
 
                 <p className="text-[11px] text-stone-600 leading-relaxed">
@@ -256,57 +258,88 @@ export const ApplicationDetailModal: React.FC<Props> = ({ appId, onClose }) => {
                 </div>
               </div>
 
-              <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl space-y-3">
-                <h4 className="text-xs font-bold text-stone-900 uppercase">Key Candidate Application Information</h4>
+              <div className="p-4 bg-white border border-stone-200 rounded-xl space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                  <h4 className="text-xs font-extrabold text-stone-900 uppercase tracking-wider font-outfit">Imported CSV Metadata</h4>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-100 text-stone-600 border border-stone-200">
+                    {app.applicationMethod || 'Careers Portal'}
+                  </span>
+                </div>
                 
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
-                      <Briefcase className="w-3 h-3 text-red-600" />
-                      <span>Company Name</span>
-                    </span>
-                    <p className="font-bold text-stone-900">{app.companyName}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  {/* Column 1: Role & Company Info */}
+                  <div className="space-y-3 p-3 bg-stone-50/70 rounded-lg border border-stone-100">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Company</span>
+                      <p className="font-extrabold text-stone-900 text-sm">{app.companyName}</p>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Role Title</span>
+                      <p className="font-bold text-stone-800">{app.roleTitle}</p>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Location & Setup</span>
+                      <p className="font-medium text-stone-700">{app.location} ({app.workType} • {app.jobType})</p>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Salary Range</span>
+                      <p className="font-bold text-emerald-700">{app.salaryRange || 'Not Specified'}</p>
+                    </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
-                      <User className="w-3 h-3 text-red-600" />
-                      <span>Role Title</span>
-                    </span>
-                    <p className="font-bold text-stone-900">{app.roleTitle}</p>
-                  </div>
+                  {/* Column 2: Stage & Contact Details */}
+                  <div className="space-y-3 p-3 bg-stone-50/70 rounded-lg border border-stone-100">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Pipeline Stage & Priority</span>
+                      <p className="font-bold text-stone-900">{app.stage} <span className="text-stone-400">|</span> {app.priority} Priority</p>
+                    </div>
 
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-red-600" />
-                      <span>Location & Work Type</span>
-                    </span>
-                    <p className="font-bold text-stone-900">{app.location} ({app.workType})</p>
-                  </div>
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Recruiter / Contact</span>
+                      <p className="font-bold text-stone-800">{app.recruiterName || 'Hiring Manager'}</p>
+                    </div>
 
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
-                      <DollarSign className="w-3 h-3 text-red-600" />
-                      <span>Salary Range</span>
-                    </span>
-                    <p className="font-bold text-stone-900">{app.salaryRange || 'N/A'}</p>
-                  </div>
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Recruiter Email</span>
+                      <p className="font-medium text-stone-700 truncate" title={app.recruiterEmail}>
+                        {app.recruiterEmail || 'None (Careers Portal Job)'}
+                      </p>
+                    </div>
 
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
-                      <User className="w-3 h-3 text-red-600" />
-                      <span>Recruiter Contact</span>
-                    </span>
-                    <p className="font-bold text-stone-900">{app.recruiterName || 'Hiring Manager'}</p>
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Applied Date</span>
+                      <p className="font-medium text-stone-700">{app.appliedDate}</p>
+                    </div>
                   </div>
+                </div>
 
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1">
-                      <Mail className="w-3 h-3 text-red-600" />
-                      <span>Recruiter Email</span>
-                    </span>
-                    <p className="font-bold text-stone-900">{app.recruiterEmail || 'Not set (Use AI Finder below)'}</p>
+                {/* Direct Link Banner */}
+                <div className="p-3 bg-stone-50 border border-stone-200 rounded-lg flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Globe className="w-4 h-4 text-red-600 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold text-stone-500 uppercase">CSV Job URL</p>
+                      {app.url ? (
+                        <p className="font-medium text-stone-800 truncate">{app.url}</p>
+                      ) : (
+                        <p className="font-medium text-stone-400 italic">No URL provided in CSV</p>
+                      )}
+                    </div>
                   </div>
+                  {app.url && (
+                    <a
+                      href={app.url.startsWith('http') ? app.url : `https://${app.url}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-md flex items-center gap-1 shrink-0 transition-all shadow-xs"
+                    >
+                      <span>Open Link</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
                 </div>
               </div>
 

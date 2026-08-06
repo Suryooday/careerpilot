@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Building2, Plus, ExternalLink, Search, Globe, Copy, CheckCircle2, Mail, Sparkles, ArrowRight, FolderDown, Send, Filter, Briefcase } from 'lucide-react';
+import { Building2, Plus, ExternalLink, Search, Globe, Copy, CheckCircle2, Mail, Sparkles, ArrowRight, FolderDown, Send, Filter, Briefcase, Trash2 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { predictRecruiterEmails } from '../../utils/recruiterFinder';
 import { detectJobSource, JobSourceCategory } from '../../utils/sourceDetector';
 
 export const CompaniesModule: React.FC = () => {
-  const { companies, addCompany, applications, updateApplication, setActiveTab, addNotification, profile, resumes } = useCRM();
+  const { companies, addCompany, applications, updateApplication, deleteApplication, setActiveTab, addNotification, profile, resumes } = useCRM();
   const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<'All' | 'Careers Portal' | 'Recruitment Website'>('All');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -222,7 +222,7 @@ export const CompaniesModule: React.FC = () => {
                       <p className="text-[11px] text-stone-500">{app.companyName} • {app.location}</p>
                     </div>
 
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-1.5">
                       <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${
                         src.category === 'Recruitment Website'
                           ? 'bg-blue-50 text-blue-700 border-blue-200'
@@ -230,6 +230,18 @@ export const CompaniesModule: React.FC = () => {
                       }`}>
                         {src.platformName}
                       </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete application for "${app.roleTitle}" at ${app.companyName}?`)) {
+                            deleteApplication(app.id);
+                          }
+                        }}
+                        title="Delete card"
+                        className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
 
@@ -241,15 +253,21 @@ export const CompaniesModule: React.FC = () => {
                   {/* Actions */}
                   <div className="space-y-2 pt-1">
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <a
-                        href={app.url || `https://${app.companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com/careers`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold rounded-lg flex items-center justify-center gap-1 text-[11px]"
-                      >
-                        <Globe className="w-3.5 h-3.5 text-red-600" />
-                        <span>Launch Job Page</span>
-                      </a>
+                      {(() => {
+                        const raw = app.url || `https://${app.companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com/careers`;
+                        const portalUrl = raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
+                        return (
+                          <a
+                            href={portalUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold rounded-lg flex items-center justify-center gap-1 text-[11px]"
+                          >
+                            <Globe className="w-3.5 h-3.5 text-red-600" />
+                            <span>Launch Job Page</span>
+                          </a>
+                        );
+                      })()}
                       <button
                         onClick={() => handleCopyCoverNote(app.companyName, app.roleTitle, app.id)}
                         className="px-2.5 py-1.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-800 font-bold rounded-lg flex items-center justify-center gap-1 text-[11px]"
@@ -322,10 +340,22 @@ export const CompaniesModule: React.FC = () => {
                       <p className="text-[11px] text-stone-500">{app.companyName} • {app.location}</p>
                     </div>
 
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
                         {src.platformName} • Applied ✓
                       </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete application for "${app.roleTitle}" at ${app.companyName}?`)) {
+                            deleteApplication(app.id);
+                          }
+                        }}
+                        title="Delete card"
+                        className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
 
@@ -337,15 +367,21 @@ export const CompaniesModule: React.FC = () => {
                   {/* Actions */}
                   <div className="space-y-2 pt-1">
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <a
-                        href={app.url || `https://${app.companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com/careers`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold rounded-lg flex items-center justify-center gap-1 text-[11px]"
-                      >
-                        <Globe className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Launch Page</span>
-                      </a>
+                      {(() => {
+                        const raw = app.url || `https://${app.companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com/careers`;
+                        const portalUrl = raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
+                        return (
+                          <a
+                            href={portalUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold rounded-lg flex items-center justify-center gap-1 text-[11px]"
+                          >
+                            <Globe className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Launch Page</span>
+                          </a>
+                        );
+                      })()}
                       <button
                         onClick={() => handleCopyCoverNote(app.companyName, app.roleTitle, app.id)}
                         className="px-2.5 py-1.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-800 font-bold rounded-lg flex items-center justify-center gap-1 text-[11px]"

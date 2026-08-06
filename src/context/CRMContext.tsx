@@ -15,6 +15,7 @@ import { generateRAGEmailDraft } from '../utils/ragEmailEngine';
 import { sendViaGmailAPI, syncGmailInbox } from '../services/gmailService';
 import { syncApplicationsToSupabase } from '../lib/supabaseClient';
 import { normalizePipelineStage } from '../utils/stageNormalizer';
+import { parseCSVToApplications } from '../utils/csvParser';
 
 export type ActiveTab =
   | 'dashboard'
@@ -340,94 +341,17 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const importCSVApplications = (csvText: string): number => {
-    const lines = csvText.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length < 2) return 0;
+    const { applications: newApps, appSectionCount, companySectionCount } = parseCSVToApplications(csvText, resumes);
+    if (newApps.length === 0) return 0;
 
-    let importedCount = 0;
-    let appSectionCount = 0;
-    let companySectionCount = 0;
-    const today = new Date().toISOString().split('T')[0];
-    const newApps: Application[] = [];
+    setApplications(prev => [...newApps, ...prev]);
+    addNotification(
+      'success',
+      'Smart File Import Completed!',
+      `Imported ${newApps.length} jobs: ${appSectionCount} routed to Applications (HR Contact) and ${companySectionCount} routed to Companies (Careers Portals).`
+    );
 
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
-      if (cols.length >= 2) {
-        const companyName = cols[0] || 'Target Company';
-        const roleTitle = cols[1] || 'Software Engineer';
-        const location = cols[2] || 'Remote';
-        const salaryRange = cols[3] || '$160,000 - $200,000';
-        const workType = (cols[4] as any) || 'Hybrid';
-        const rawStage = cols[5];
-        const stage = normalizePipelineStage(rawStage);
-        const priority = (cols[6] as any) || 'High';
-        const jobDescription = cols[7] || `${roleTitle} role at ${companyName}`;
-        const rawRecruiterName = cols[8];
-        const rawRecruiterEmail = cols[9];
-        const rawPhone = cols[10];
-        const rawUrl = cols[11] || cols.find(c => c.startsWith('http://') || c.startsWith('https://')) || '';
-
-        // Smart Contact Validation: Check if real HR email/phone is present
-        const hasValidHREmail = rawRecruiterEmail && rawRecruiterEmail.includes('@') && !rawRecruiterEmail.includes('recruiter@company.com') && !rawRecruiterEmail.toLowerCase().includes('n/a');
-        const hasValidHRPhone = rawPhone && rawPhone.length >= 7;
-        const hasHRContact = Boolean(hasValidHREmail || hasValidHRPhone);
-
-        const recruiterName = hasHRContact ? (rawRecruiterName || 'Hiring Manager') : '';
-        const recruiterEmail = hasValidHREmail ? rawRecruiterEmail : '';
-        const recruiterPhone = hasValidHRPhone ? rawPhone : '';
-        const applicationMethod = hasHRContact ? 'Direct Email' : 'Careers Portal';
-        const portalStatus = hasHRContact ? undefined : 'Imported';
-
-        if (hasHRContact) {
-          appSectionCount++;
-        } else {
-          companySectionCount++;
-        }
-
-        const primaryResume = resumes.find(r => r.isPrimary) || resumes[0];
-        const atsResult = analyzeATS(jobDescription, primaryResume?.contentSummary || '', primaryResume?.skills || []);
-
-        newApps.push({
-          id: 'app-csv-' + Date.now() + '-' + i,
-          companyName,
-          roleTitle,
-          location,
-          salaryRange,
-          workType,
-          jobType: 'Full-time',
-          stage,
-          priority,
-          appliedDate: today,
-          lastActivityDate: today,
-          jobDescription,
-          url: rawUrl || undefined,
-          atsScore: atsResult.score,
-          matchedKeywords: atsResult.matchedKeywords,
-          missingKeywords: atsResult.missingKeywords,
-          recruiterName,
-          recruiterEmail,
-          recruiterPhone,
-          applicationMethod,
-          portalStatus,
-          notes: [],
-          timeline: [
-            { id: 't-csv-' + i, date: today, title: 'Imported via File', description: hasHRContact ? 'Routed to Applications (HR Email)' : 'Routed to Companies (Careers Portal)', type: 'stage_change' }
-          ],
-          tags: ['File Import', hasHRContact ? 'HR Email' : 'Careers Portal']
-        });
-        importedCount++;
-      }
-    }
-
-    if (newApps.length > 0) {
-      setApplications(prev => [...newApps, ...prev]);
-      addNotification(
-        'success',
-        'Smart File Import Completed!',
-        `Imported ${importedCount} jobs: ${appSectionCount} routed to Applications (HR Contact) and ${companySectionCount} routed to Companies (Careers Portals).`
-      );
-    }
-
-    return importedCount;
+    return newApps.length;
   };
 
   const addCompany = (compData: Omit<Company, 'id' | 'openApplicationsCount'>) => {
